@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--  Jean-Sébastien Roques - reworked to use latest Netatmo API for Thermostat - Work in progress -->
 <thing:thing-descriptions bindingId="netatmo"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xmlns:thing="http://eclipse.org/smarthome/schemas/thing-description/v1.0.0"
@@ -36,21 +37,30 @@
         </state>
     </channel-type>
     
-    <channel-type id="boilerOn">
+    <channel-type id="thermRelayCmd">
+        <item-type>Dimmer</item-type>
+        <label>Thermostat Relay Command</label>
+        <description>Command sent to the boiler. For now 0% = Off, 100% = On</description>
+        <category>Energy</category>
+        <state min="0" max="0" step="1" pattern="%d %%" readOnly="true">
+        </state>
+    </channel-type>
+    
+    <!-- channel-type id="boilerOn">
         <item-type>Number</item-type>
         <label>Boiler On</label>
         <description>Duration, since the previous data point, during which the boiler has been on (in seconds)</description>
         <category>Duration</category>
         <state readOnly="true" pattern="%d s"></state>                
-    </channel-type>
+    </channel-type -->
     
-    <channel-type id="boilerOff">
+    <!--  channel-type id="boilerOff">
         <item-type>Number</item-type>
         <label>Boiler Off</label>
         <description>Duration, since the previous data point, during which the boiler has been off (in seconds)</description>
         <category>Duration</category>
         <state readOnly="true" pattern="%d s"></state>              
-    </channel-type>
+    </channel-type -->
     
     <channel-type id="setpointMode">
         <item-type>String</item-type>

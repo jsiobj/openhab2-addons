@@ -12,13 +12,14 @@ import org.eclipse.smarthome.core.thing.ThingStatus;
 import org.eclipse.smarthome.core.thing.ThingStatusDetail;
 import org.openhab.binding.netatmo.handler.NetatmoDeviceHandler;
 
-import io.swagger.client.model.NADeviceListBody;
+//import io.swagger.client.model.NADeviceListBody;
 
 /**
  * {@link NAMainHandler} is the base class for all current Netatmo
  * weather station equipments (both modules and devices)
  *
  * @author Gaël L'hopital - Initial contribution OH2 version
+ * @author Jean-Sébastien Roques - reworked to use latest Netatmo API for Thermostat - Work in progress
  *
  */
 public class NAMainHandler extends NetatmoDeviceHandler {
@@ -31,10 +32,11 @@ public class NAMainHandler extends NetatmoDeviceHandler {
         try {
             // Aargh, this silently fails and screws the runnable if the api is not responding as expected (e.g. to many
             // queries
-            NADeviceListBody deviceList = bridgeHandler.getStationApi().devicelist(actualApp, getId(), false).getBody();
-            device = deviceList.getDevices().get(0);
+            // NADeviceListBody deviceList = bridgeHandler.getStationApi().devicelist(actualApp, getId(),
+            // false).getBody();
+            // device = deviceList.getDevices().get(0);
 
-            super.updateChannels();
+            // super.updateChannels();
         } catch (Exception e) {
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.NONE, e.getMessage());
         }

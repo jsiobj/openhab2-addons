@@ -23,15 +23,16 @@ import org.openhab.binding.netatmo.handler.NetatmoBridgeHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.swagger.client.model.NADevice;
-import io.swagger.client.model.NADeviceListResponse;
-import io.swagger.client.model.NAModule;
+import io.swagger.client.model.NAPlug;
+import io.swagger.client.model.NAThermostat;
+import io.swagger.client.model.NAThermostatDataResponse;
 
 /**
  * The {@link NetatmoModuleDiscoveryService} searches for available Netatmo
  * devices and modules connected to the API console
  *
  * @author Gaël L'hopital - Initial contribution
+ * @author Jean-Sébastien Roques - reworked to use latest Netatmo API for Thermostat - Work in progress
  *
  */
 public class NetatmoModuleDiscoveryService extends AbstractDiscoveryService {
@@ -44,58 +45,66 @@ public class NetatmoModuleDiscoveryService extends AbstractDiscoveryService {
         this.netatmoBridgeHandler = netatmoBridgeHandler;
     }
 
-    private void screenDevicesAndModules(NADeviceListResponse deviceList) {
-        if (deviceList != null) {
-            List<NADevice> devices = deviceList.getBody().getDevices();
-            if (devices != null) {
-                for (NADevice naDevice : devices) {
-                    onDeviceAddedInternal(naDevice);
-                    List<NAModule> modules = deviceList.getBody().getModules();
-                    if (modules != null) {
-                        for (NAModule naModule : modules) {
-                            onModuleAddedInternal(naModule);
+    private void screenThermostatDevicesAndModules(NAThermostatDataResponse thermostatData) {
+        if (thermostatData != null) {
+            List<NAPlug> naPlugList = thermostatData.getBody().getDevices();
+            if (naPlugList != null) {
+                for (NAPlug naPlug : naPlugList) {
+                    onPlugAddedInternal(naPlug);
+                    logger.debug("Found device : {}", naPlug.getStationName());
+                    List<NAThermostat> naThermostatList = naPlug.getModules();
+                    if (naThermostatList != null) {
+                        for (NAThermostat naThermostat : naThermostatList) {
+                            logger.debug("Found module : " + naThermostat.getModuleName());
+                            onThermostatAddedInternal(naThermostat, naPlug);
                         }
+                    } else {
+                        logger.warn("No Thermostat found for Plug {}", naPlug.getStationName());
                     }
                 }
+            } else {
+                logger.warn("No Plug found !");
             }
+        } else {
+            logger.error("Something bad happened ! Thermostat data is empty !");
         }
+    }
+
+    private void onPlugAddedInternal(NAPlug naPlug) {
+        ThingUID thingUID = findThingUID(naPlug.getType(), naPlug.getId());
+        Map<String, Object> properties = new HashMap<>(1);
+        properties.put(EQUIPMENT_ID, naPlug.getId());
+        addDiscoveredThing(thingUID, properties, naPlug.getStationName());
+    }
+
+    private void onThermostatAddedInternal(NAThermostat naThermostat, NAPlug naPlug) {
+        ThingUID thingUID = findThingUID(naThermostat.getType(), naThermostat.getId());
+        Map<String, Object> properties = new HashMap<>(2);
+        properties.put(EQUIPMENT_ID, naThermostat.getId());
+        properties.put(PARENT_ID, naPlug.getId());
+        addDiscoveredThing(thingUID, properties, naThermostat.getModuleName());
     }
 
     @Override
     public void startScan() {
-        NADeviceListResponse deviceList;
-        try {
-            deviceList = netatmoBridgeHandler.getStationApi().devicelist("app_station", null, false);
-            screenDevicesAndModules(deviceList);
+        NAThermostatDataResponse thermostatData;
 
-            deviceList = netatmoBridgeHandler.getThermostatApi().devicelist("app_thermostat", null, false);
-            screenDevicesAndModules(deviceList);
+        try {
+
+            // TODO : update discovery for WeatherStation once swagger api is updated
+            // deviceList = netatmoBridgeHandler.getStationApi().devicelist("app_station", null, false);
+            // screenDevicesAndModules(deviceList);
+
+            if (netatmoBridgeHandler.thermostatApi != null) {
+                thermostatData = netatmoBridgeHandler.getThermostatApi().getthermostatsdata(null);
+                screenThermostatDevicesAndModules(thermostatData);
+            }
+
         } catch (Exception e) {
             logger.warn(e.getMessage());
         }
 
         stopScan();
-    }
-
-    private void onDeviceAddedInternal(NADevice naDevice) {
-        ThingUID thingUID = findThingUID(naDevice.getType(), naDevice.getId());
-        Map<String, Object> properties = new HashMap<>(1);
-
-        properties.put(EQUIPMENT_ID, naDevice.getId());
-
-        String name = naDevice.getModuleName();
-
-        addDiscoveredThing(thingUID, properties, (name == null) ? naDevice.getStationName() : name);
-    }
-
-    private void onModuleAddedInternal(NAModule naModule) {
-        ThingUID thingUID = findThingUID(naModule.getType(), naModule.getId());
-        Map<String, Object> properties = new HashMap<>(2);
-
-        properties.put(EQUIPMENT_ID, naModule.getId());
-        properties.put(PARENT_ID, naModule.getMainDevice());
-
-        addDiscoveredThing(thingUID, properties, naModule.getModuleName());
     }
 
     private void addDiscoveredThing(ThingUID thingUID, Map<String, Object> properties, String displayLabel) {

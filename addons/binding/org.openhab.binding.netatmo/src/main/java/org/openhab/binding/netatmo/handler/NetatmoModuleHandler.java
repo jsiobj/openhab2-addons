@@ -11,28 +11,27 @@ import static org.openhab.binding.netatmo.NetatmoBindingConstants.*;
 
 import java.util.Map;
 
-import org.eclipse.smarthome.core.library.types.DateTimeType;
-import org.eclipse.smarthome.core.library.types.DecimalType;
-import org.eclipse.smarthome.core.library.types.OnOffType;
+import org.eclipse.smarthome.core.thing.Bridge;
 import org.eclipse.smarthome.core.thing.Thing;
-import org.eclipse.smarthome.core.types.State;
+import org.eclipse.smarthome.core.thing.binding.ThingHandler;
 import org.openhab.binding.netatmo.config.NetatmoModuleConfiguration;
-
-import io.swagger.client.model.NAModule;
 
 /**
  * {@link NetatmoModuleHandler} is the handler for a given
  * module device accessed through the Netatmo Device
  *
  * @author Gaël L'hopital - Initial contribution OH2 version
+ * @author Jean-Sébastien Roques - reworked to use latest Netatmo API for Thermostat - Work in progress
  *
  */
 public abstract class NetatmoModuleHandler extends AbstractNetatmoThingHandler {
-    private final int batteryMin;
-    private final int batteryLow;
-    private final int batteryMax;
+
+    // private static Logger logger = LoggerFactory.getLogger(NetatmoModuleHandler.class);
     private final NetatmoModuleConfiguration configuration;
-    protected NAModule module;
+
+    protected final int batteryMin;
+    protected final int batteryLow;
+    protected final int batteryMax;
 
     protected NetatmoModuleHandler(Thing thing) {
         super(thing);
@@ -43,47 +42,17 @@ public abstract class NetatmoModuleHandler extends AbstractNetatmoThingHandler {
         this.configuration = this.getConfigAs(NetatmoModuleConfiguration.class);
     }
 
+    @Override
+    public void bridgeHandlerInitialized(ThingHandler thingHandler, Bridge bridge) {
+        super.bridgeHandlerInitialized(thingHandler, bridge);
+    }
+
     public String getParentId() {
         return configuration.getParentId();
     }
 
     public String getId() {
         return configuration.getEquipmentId();
-    }
-
-    private int getBatteryPercent(int batteryVp) {
-        // With new battery, API may return a value superior to batteryMax !
-        int correctedVp = Math.min(batteryVp, batteryMax);
-        return (100 * (correctedVp - batteryMin) / (batteryMax - batteryMin));
-    }
-
-    private boolean isBatteryLow(int batteryVp) {
-        return (batteryVp < batteryLow);
-    }
-
-    @Override
-    protected State getNAThingProperty(String chanelId) {
-        switch (chanelId) {
-            case CHANNEL_BATTERY_LEVEL:
-                return new DecimalType(getBatteryPercent(module.getBatteryVp()));
-            case CHANNEL_LOW_BATTERY:
-                return isBatteryLow(module.getBatteryVp()) ? OnOffType.ON : OnOffType.OFF;
-            case CHANNEL_LAST_MESSAGE:
-                return new DateTimeType(timestampToCalendar(module.getLastMessage()));
-            case CHANNEL_RF_STATUS:
-                Integer rfStatus = module.getRfStatus();
-                return new DecimalType(getSignalStrength(rfStatus));
-            default:
-                return super.getNAThingProperty(chanelId);
-        }
-    }
-
-    @Override
-    protected void updateChannels() {
-        dashboard = module.getDashboardData();
-
-        super.updateChannels();
-
     }
 
 }

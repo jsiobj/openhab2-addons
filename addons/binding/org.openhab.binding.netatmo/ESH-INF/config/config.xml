@@ -38,13 +38,13 @@
         <parameter name="readStation" type="boolean" required="true">
             <label>Access Weather Station</label>
             <description>Read weather station's data.</description>
-            <default>true</default>
+            <default>false</default>
         </parameter>
             
         <parameter name="readThermostat" type="boolean" required="true">
             <label>Access Thermostat</label>
             <description>Read and Write thermostat's data.</description>
-            <default>true</default>
+            <default>false</default>
         </parameter>                                               
     </config-description>
 

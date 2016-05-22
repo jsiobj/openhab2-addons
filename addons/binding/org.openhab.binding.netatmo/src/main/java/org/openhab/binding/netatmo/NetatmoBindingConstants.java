@@ -18,6 +18,7 @@ import com.google.common.collect.ImmutableSet;
  * across the whole binding.
  *
  * @author Gaël L'hopital - Initial contribution
+ * @author Jean-Sébastien Roques - reworked to use latest Netatmo API for Thermostat - Work in progress
  */
 public class NetatmoBindingConstants {
 
@@ -48,8 +49,6 @@ public class NetatmoBindingConstants {
     public final static String CHANNEL_LAST_STATUS_STORE = "LastStatusStore";
     public final static String CHANNEL_LAST_MESSAGE = "LastMessage";
     public final static String CHANNEL_LOCATION = "Location";
-    public final static String CHANNEL_BOILER_ON = "BoilerOn";
-    public final static String CHANNEL_BOILER_OFF = "BoilerOff";
     public final static String CHANNEL_DATE_MAX_TEMP = "date_max_temp";
     public final static String CHANNEL_DATE_MIN_TEMP = "date_min_temp";
     public final static String CHANNEL_MAX_TEMP = "min_temp";
@@ -76,6 +75,9 @@ public class NetatmoBindingConstants {
     // Thermostat specific channels
     public final static String CHANNEL_SETPOINT_MODE = "SetpointMode";
     public final static String CHANNEL_SETPOINT_TEMP = "SetpointTemperature";
+    public final static String CHANNEL_THERM_RELAY_CMD = "ThermRelayCmd";
+    // public final static String CHANNEL_BOILER_ON = "BoilerOn";
+    // public final static String CHANNEL_BOILER_OFF = "BoilerOff";
     // public final static String CHANNEL_SETPOINT_END_TIME = "setpoint_endtime";
 
     // Module Properties

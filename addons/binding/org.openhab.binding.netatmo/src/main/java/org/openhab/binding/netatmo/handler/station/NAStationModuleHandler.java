@@ -7,13 +7,9 @@
  */
 package org.openhab.binding.netatmo.handler.station;
 
-import static org.openhab.binding.netatmo.NetatmoBindingConstants.*;
-
-import org.eclipse.smarthome.core.library.types.DecimalType;
 import org.eclipse.smarthome.core.thing.Thing;
 import org.eclipse.smarthome.core.thing.ThingStatus;
 import org.eclipse.smarthome.core.thing.ThingStatusDetail;
-import org.eclipse.smarthome.core.types.State;
 import org.openhab.binding.netatmo.handler.NetatmoModuleHandler;
 
 import io.swagger.client.model.NADeviceListBody;
@@ -24,6 +20,7 @@ import io.swagger.client.model.NAModule;
  * Station main module
  *
  * @author Gaël L'hopital - Initial contribution OH2 version
+ * @author Jean-Sébastien Roques - reworked to use latest Netatmo API for Thermostat - Work in progress
  *
  */
 public class NAStationModuleHandler extends NetatmoModuleHandler {
@@ -38,8 +35,8 @@ public class NAStationModuleHandler extends NetatmoModuleHandler {
                     .getBody();
             for (NAModule module : deviceList.getModules()) {
                 if (module.getId().equalsIgnoreCase(getId())) {
-                    this.module = module;
-                    super.updateChannels();
+                    // this.module = module;
+                    // super.updateChannels();
                 }
             }
 
@@ -47,27 +44,27 @@ public class NAStationModuleHandler extends NetatmoModuleHandler {
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.NONE, e.getMessage());
         }
     }
-
-    @Override
-    protected State getNAThingProperty(String chanelId) {
-        switch (chanelId) {
-            case CHANNEL_RAIN:
-                return new DecimalType(dashboard.getRain());
-            case CHANNEL_SUM_RAIN1:
-                return new DecimalType(dashboard.getSumRain1());
-            case CHANNEL_SUM_RAIN24:
-                return new DecimalType(dashboard.getSumRain24());
-            case CHANNEL_WIND_ANGLE:
-                return new DecimalType(dashboard.getWindAngle());
-            case CHANNEL_WIND_STRENGTH:
-                return new DecimalType(dashboard.getWindStrength());
-            case CHANNEL_GUST_ANGLE:
-                return new DecimalType(dashboard.getGustAngle());
-            case CHANNEL_GUST_STRENGTH:
-                return new DecimalType(dashboard.getGustStrength());
-            default:
-                return super.getNAThingProperty(chanelId);
-        }
-    }
-
+    /*
+     * @Override
+     * protected State getNAThingProperty(String chanelId) {
+     * switch (chanelId) {
+     * case CHANNEL_RAIN:
+     * return new DecimalType(dashboard.getRain());
+     * case CHANNEL_SUM_RAIN1:
+     * return new DecimalType(dashboard.getSumRain1());
+     * case CHANNEL_SUM_RAIN24:
+     * return new DecimalType(dashboard.getSumRain24());
+     * case CHANNEL_WIND_ANGLE:
+     * return new DecimalType(dashboard.getWindAngle());
+     * case CHANNEL_WIND_STRENGTH:
+     * return new DecimalType(dashboard.getWindStrength());
+     * case CHANNEL_GUST_ANGLE:
+     * return new DecimalType(dashboard.getGustAngle());
+     * case CHANNEL_GUST_STRENGTH:
+     * return new DecimalType(dashboard.getGustStrength());
+     * default:
+     * return super.getNAThingProperty(chanelId);
+     * }
+     * }
+     */
 }

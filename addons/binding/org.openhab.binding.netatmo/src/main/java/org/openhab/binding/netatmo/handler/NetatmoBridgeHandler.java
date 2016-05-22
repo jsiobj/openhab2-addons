@@ -15,9 +15,9 @@ import org.eclipse.smarthome.core.thing.Bridge;
 import org.eclipse.smarthome.core.thing.Channel;
 import org.eclipse.smarthome.core.thing.ChannelUID;
 import org.eclipse.smarthome.core.thing.ThingStatus;
-import org.eclipse.smarthome.core.thing.ThingStatusDetail;
 import org.eclipse.smarthome.core.thing.binding.BaseBridgeHandler;
 import org.eclipse.smarthome.core.types.Command;
+import org.eclipse.smarthome.core.types.State;
 import org.openhab.binding.netatmo.config.NetatmoBridgeConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,7 +28,6 @@ import io.swagger.client.api.ThermostatApi;
 import io.swagger.client.auth.OAuth;
 import io.swagger.client.auth.OAuthFlow;
 import io.swagger.client.model.NAUserAdministrative;
-import io.swagger.client.model.NAUserResponse;
 import retrofit.RestAdapter.LogLevel;
 
 /**
@@ -37,14 +36,19 @@ import retrofit.RestAdapter.LogLevel;
  * {@link NetatmoBridgeHandler} to request informations about their status
  *
  * @author Gaël L'hopital - Initial contribution OH2 version
+ * @author Jean-Sébastien Roques - reworked to use latest Netatmo API for Thermostat - Work in progress
  *
  */
 public class NetatmoBridgeHandler extends BaseBridgeHandler {
+
     private static Logger logger = LoggerFactory.getLogger(NetatmoBridgeHandler.class);
+
     private NetatmoBridgeConfiguration configuration;
-    private ApiClient apiClient;
-    private StationApi stationApi;
-    private ThermostatApi thermostatApi;
+    protected NAUserAdministrative admin;
+
+    public ApiClient apiClient;
+    public StationApi stationApi;
+    public ThermostatApi thermostatApi;
 
     public NetatmoBridgeHandler(Bridge bridge) {
         super(bridge);
@@ -73,48 +77,66 @@ public class NetatmoBridgeHandler extends BaseBridgeHandler {
         apiClient.getTokenEndPoint().setScope(getApiScope());
         apiClient.getAdapterBuilder().setLogLevel(LogLevel.NONE);
 
+        try {
+            getStationApi();
+            getThermostatApi();
+
+            // Get user administrative data from either station or thermostat API
+            if (configuration.readStation) {
+                admin = stationApi.getuser().getBody().getAdministrative();
+            } else if (configuration.readThermostat) {
+                admin = thermostatApi.getthermostatsdata(null).getBody().getUser().getAdministrative();
+            } else {
+                throw new Exception("Please select at least Station or Thermostat in configuration");
+            }
+        } catch (Exception e) {
+            logger.error("Failed to get API data");
+        }
+
+        updateStatus(ThingStatus.ONLINE);
         updateChannels();
 
     }
 
     private void updateChannels() {
-        NAUserResponse user = null;
-        try {
-            getStationApi();
-            if (stationApi != null) {
-                user = stationApi.getuser();
+        logger.debug("Updating Netatmo bridge channels");
+
+        for (Channel channel : getThing().getChannels()) {
+            String channelId = channel.getUID().getId();
+            State state = getNAChannelValue(channelId);
+            if (state != null) {
+                logger.debug("Update state for channel {}. New state is {}", channelId, state);
+                updateState(channel.getUID(), state);
             } else {
-                getThermostatApi();
-                if (thermostatApi != null) {
-                    user = thermostatApi.getuser();
-                }
+                logger.warn("Could not get value for channel {}", channelId);
             }
 
-            if (user != null) {
-                NAUserAdministrative admin = user.getBody().getAdministrative();
-                for (Channel channel : getThing().getChannels()) {
-                    String chanelId = channel.getUID().getId();
-                    switch (chanelId) {
-                        case CHANNEL_UNIT: {
-                            updateState(channel.getUID(), new DecimalType(admin.getUnit()));
-                            break;
-                        }
-                        case CHANNEL_WIND_UNIT: {
-                            updateState(channel.getUID(), new DecimalType(admin.getWindunit()));
-                            break;
-                        }
-                        case CHANNEL_PRESSURE_UNIT: {
-                            updateState(channel.getUID(), new DecimalType(admin.getPressureunit()));
-                            break;
-                        }
-                    }
-                }
-                updateStatus(ThingStatus.ONLINE);
-            } else {
-                throw new Exception("Not able to initialize Netatmo API connexion with current credentials");
-            }
-        } catch (Exception e) {
-            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.NONE, e.getMessage());
+        }
+    }
+
+    private State getNAChannelValue(String channelId) {
+        /*
+         * TODO : translate numeric values to significative text
+         *
+         * unit : 0 -> metric system, 1 -> imperial system
+         * windunit: 0 -> kph, 1 -> mph, 2 -> ms, 3 -> beaufort, 4 -> knot
+         * pressureunit: 0 -> mbar, 1 -> inHg, 2 -> mmHg
+         * lang: user locale reg_locale: user regional preferences (used for displaying date)
+         * feel_like: algorithme used to compute feel like temperature, 0 -> humidex, 1 ->
+         * heat-indexCzQCOSte9IEKCGxKTb21
+         */
+
+        switch (channelId) {
+            case CHANNEL_UNIT:
+                return new DecimalType(admin.getUnit());
+            case CHANNEL_WIND_UNIT:
+                return new DecimalType(admin.getWindunit());
+            case CHANNEL_PRESSURE_UNIT:
+                return new DecimalType(admin.getPressureunit());
+
+            default:
+                logger.warn("{} : Unknown or unsupported channel for Netatmo Bridge", channelId);
+                return null;
         }
     }
 
@@ -157,5 +179,4 @@ public class NetatmoBridgeHandler extends BaseBridgeHandler {
         }
         throw new Exception("Configuration does not allow access to ThermostatApi");
     }
-
 }
