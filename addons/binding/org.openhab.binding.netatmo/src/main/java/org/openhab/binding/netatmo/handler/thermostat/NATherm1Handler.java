@@ -17,10 +17,10 @@ import org.eclipse.smarthome.core.library.types.OnOffType;
 import org.eclipse.smarthome.core.library.types.PercentType;
 import org.eclipse.smarthome.core.library.types.StringType;
 import org.eclipse.smarthome.core.thing.Bridge;
+import org.eclipse.smarthome.core.thing.Channel;
 import org.eclipse.smarthome.core.thing.ChannelUID;
 import org.eclipse.smarthome.core.thing.Thing;
 import org.eclipse.smarthome.core.thing.ThingStatus;
-import org.eclipse.smarthome.core.thing.ThingStatusDetail;
 import org.eclipse.smarthome.core.thing.binding.ThingHandler;
 import org.eclipse.smarthome.core.types.Command;
 import org.eclipse.smarthome.core.types.State;
@@ -30,7 +30,6 @@ import org.slf4j.LoggerFactory;
 
 import io.swagger.client.model.NADevice;
 import io.swagger.client.model.NADeviceListBody;
-import io.swagger.client.model.NAPlug;
 import io.swagger.client.model.NAThermostat;
 
 /**
@@ -44,7 +43,7 @@ import io.swagger.client.model.NAThermostat;
 public class NATherm1Handler extends NetatmoModuleHandler {
 
     private static Logger logger = LoggerFactory.getLogger(NATherm1Handler.class);
-    private NAThermostat naTherm1;
+    // private NAThermostat naTherm1;
     private Integer setpointDefaultDuration = null;
 
     public NATherm1Handler(Thing thing) {
@@ -58,14 +57,14 @@ public class NATherm1Handler extends NetatmoModuleHandler {
             // Here, only 1 thermostat (module) should be retrieved as getthermostatsdata() is called using PARENT_ID
             // which contains the Netatmo Plug/Relay (device) id and there can be only 1 thermostat (module) per
             // Plug/Relay
-            String naPlugId = (String) getConfig().get(PARENT_ID);
-            NAPlug naPlug = bridgeHandler.getThermostatApi().getthermostatsdata(naPlugId).getBody().getDevices().get(0);
-            naTherm1 = naPlug.getModules().get(0);
+            // String naPlugId = (String) getConfig().get(PARENT_ID);
+            // NAPlug naPlug =
+            // bridgeHandler.getThermostatApi().getthermostatsdata(naPlugId).getBody().getDevices().get(0);
+            // naTherm1 = naPlug.getModules().get(0);
         } catch (Exception e) {
             logger.error("Cannot create naTherm1 handler : {}", e.getMessage());
         }
         updateStatus(ThingStatus.ONLINE);
-        updateChannels();
     }
 
     private int getBatteryPercent(int batteryVp) {
@@ -78,30 +77,7 @@ public class NATherm1Handler extends NetatmoModuleHandler {
         return (batteryVp < batteryLow);
     }
 
-    /*
-     * @Override
-     * protected void updateChannels() {
-     * try {
-     * for (Channel channel : getThing().getChannels()) {
-     * String channelId = channel.getUID().getId();
-     * State state = getNATherm1ChannelValue(channelId);
-     * if (state != null) {
-     * logger.debug("Update state for channel {}. New state is {}", channelId, state);
-     * updateState(channel.getUID(), state);
-     * } else {
-     * logger.warn("Could not get value for channel {}", channelId);
-     * }
-     * }
-     * super.updateChannels();
-     * } catch (Exception e) {
-     * updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.NONE, e.getMessage());
-     * }
-     *
-     * }
-     */
-
-    @Override
-    protected State getNAChannelValue(String channelId) {
+    protected State getNAChannelValue(NAThermostat naTherm1, String channelId) {
 
         switch (channelId) {
             case CHANNEL_SETPOINT_MODE:
@@ -129,6 +105,25 @@ public class NATherm1Handler extends NetatmoModuleHandler {
         }
     }
 
+    public void updateChannels(NAThermostat naTherm) {
+        try {
+            for (Channel channel : getThing().getChannels()) {
+                String channelId = channel.getUID().getId();
+                State state = getNAChannelValue(naTherm, channelId);
+                if (state != null) {
+                    logger.debug("Update state for channel {}. New state is {}", channelId, state);
+                    updateState(channel.getUID(), state);
+                } else {
+                    logger.warn("Could not get value for channel {}", channelId);
+                }
+            }
+            // super.updateChannels();
+        } catch (Exception e) {
+            logger.error("Could not set state for thermostat channels : {}", e.getMessage());
+            // updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.NONE, e.getMessage());
+        }
+    }
+
     @Override
     public void handleCommand(ChannelUID channelUID, Command command) {
         try {
@@ -153,9 +148,10 @@ public class NATherm1Handler extends NetatmoModuleHandler {
                     break;
             }
 
-            updateChannels();
+            // updateChannels();
         } catch (Exception e) {
-            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.NONE, e.getMessage());
+            logger.error("Could not set state for thermostat one channel : {}", e.getMessage());
+            // updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.NONE, e.getMessage());
         }
     }
 

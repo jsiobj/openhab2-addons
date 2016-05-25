@@ -14,6 +14,7 @@ import java.util.Map;
 import org.eclipse.smarthome.core.thing.Bridge;
 import org.eclipse.smarthome.core.thing.Thing;
 import org.eclipse.smarthome.core.thing.binding.ThingHandler;
+import org.eclipse.smarthome.core.types.State;
 import org.openhab.binding.netatmo.config.NetatmoModuleConfiguration;
 
 /**
@@ -45,6 +46,10 @@ public abstract class NetatmoModuleHandler extends AbstractNetatmoThingHandler {
     @Override
     public void bridgeHandlerInitialized(ThingHandler thingHandler, Bridge bridge) {
         super.bridgeHandlerInitialized(thingHandler, bridge);
+    }
+
+    protected State getNAChannelValue(String channelId) {
+        return null;
     }
 
     public String getParentId() {

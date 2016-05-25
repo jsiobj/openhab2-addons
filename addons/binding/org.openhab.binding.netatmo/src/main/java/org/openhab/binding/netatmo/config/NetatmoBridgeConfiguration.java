@@ -20,4 +20,5 @@ public class NetatmoBridgeConfiguration {
     public String password;
     public Boolean readStation;
     public Boolean readThermostat;
+    public long refreshInterval;
 }

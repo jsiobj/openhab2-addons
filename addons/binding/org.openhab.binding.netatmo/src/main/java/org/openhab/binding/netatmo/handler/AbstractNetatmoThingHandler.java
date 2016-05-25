@@ -16,18 +16,11 @@ import java.util.List;
 import java.util.Map;
 
 import org.eclipse.smarthome.core.thing.Bridge;
-import org.eclipse.smarthome.core.thing.Channel;
-import org.eclipse.smarthome.core.thing.ChannelUID;
 import org.eclipse.smarthome.core.thing.Thing;
 import org.eclipse.smarthome.core.thing.ThingStatus;
 import org.eclipse.smarthome.core.thing.ThingStatusDetail;
 import org.eclipse.smarthome.core.thing.binding.BaseThingHandler;
 import org.eclipse.smarthome.core.thing.binding.ThingHandler;
-import org.eclipse.smarthome.core.types.Command;
-import org.eclipse.smarthome.core.types.RefreshType;
-import org.eclipse.smarthome.core.types.State;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * {@link AbstractNetatmoThingHandler} is the abstract class that handles
@@ -39,7 +32,7 @@ import org.slf4j.LoggerFactory;
  */
 abstract class AbstractNetatmoThingHandler extends BaseThingHandler {
 
-    private static Logger logger = LoggerFactory.getLogger(AbstractNetatmoThingHandler.class);
+    // private static Logger logger = LoggerFactory.getLogger(AbstractNetatmoThingHandler.class);
 
     private final List<Integer> signalThresholds = new ArrayList<Integer>();
     protected final String actualApp;
@@ -68,32 +61,38 @@ abstract class AbstractNetatmoThingHandler extends BaseThingHandler {
         bridgeHandler = (NetatmoBridgeHandler) thingHandler;
     }
 
-    protected void updateChannels() {
-        for (Channel channel : getThing().getChannels()) {
-            String channelId = channel.getUID().getId();
-            State state = getNAChannelValue(channelId);
-            if (state != null) {
-                logger.debug("Update state for channel {}. New state is {}", channelId, state);
-                updateState(channel.getUID(), state);
-            } else {
-                logger.warn("Could not get value for channel {}", channelId);
-            }
-        }
-    }
+    /*
+     * protected void updateChannels() {
+     * for (Channel channel : getThing().getChannels()) {
+     * String channelId = channel.getUID().getId();
+     * State state = getNAChannelValue(channelId);
+     * if (state != null) {
+     * logger.debug("Update state for channel {}. New state is {}", channelId, state);
+     * updateState(channel.getUID(), state);
+     * } else {
+     * logger.warn("Could not get value for channel {}", channelId);
+     * }
+     * }
+     * }
+     */
 
-    protected State getNAChannelValue(String channelId) {
-        return null;
-    }
+    /*
+     * protected State getNAChannelValue(String channelId) {
+     * return null;
+     * }
+     */
 
-    @Override
-    public void handleCommand(ChannelUID channelUID, Command command) {
-        if (command == RefreshType.REFRESH) {
-            logger.debug("Refreshing {}", channelUID);
-            updateChannels();
-        } else {
-            logger.warn("This Thing is read-only and can only handle REFRESH command");
-        }
-    }
+    /*
+     * @Override
+     * public void handleCommand(ChannelUID channelUID, Command command) {
+     * if (command == RefreshType.REFRESH) {
+     * logger.debug("Refreshing {}", channelUID);
+     * updateChannels();
+     * } else {
+     * logger.warn("This Thing is read-only and can only handle REFRESH command");
+     * }
+     * }
+     */
 
     // Misc tools
     protected Calendar timestampToCalendar(Integer netatmoTS) {

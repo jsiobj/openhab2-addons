@@ -90,11 +90,9 @@ public class NetatmoModuleDiscoveryService extends AbstractDiscoveryService {
         NAThermostatDataResponse thermostatData;
 
         try {
-
             // TODO : update discovery for WeatherStation once swagger api is updated
             // deviceList = netatmoBridgeHandler.getStationApi().devicelist("app_station", null, false);
             // screenDevicesAndModules(deviceList);
-
             if (netatmoBridgeHandler.thermostatApi != null) {
                 thermostatData = netatmoBridgeHandler.getThermostatApi().getthermostatsdata(null);
                 screenThermostatDevicesAndModules(thermostatData);
@@ -103,7 +101,6 @@ public class NetatmoModuleDiscoveryService extends AbstractDiscoveryService {
         } catch (Exception e) {
             logger.warn(e.getMessage());
         }
-
         stopScan();
     }
 
@@ -119,12 +116,10 @@ public class NetatmoModuleDiscoveryService extends AbstractDiscoveryService {
             String uid = supportedThingTypeUID.getId();
 
             if (uid.equalsIgnoreCase(thingType)) {
-
                 return new ThingUID(supportedThingTypeUID, netatmoBridgeHandler.getThing().getUID(),
                         thingId.replaceAll("[^a-zA-Z0-9_]", ""));
             }
         }
-
         throw new IllegalArgumentException("Unsupported device type discovered :" + thingType);
     }
 

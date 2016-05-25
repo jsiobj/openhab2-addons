@@ -13,9 +13,14 @@ import org.eclipse.smarthome.core.library.types.DateTimeType;
 import org.eclipse.smarthome.core.library.types.DecimalType;
 import org.eclipse.smarthome.core.library.types.PointType;
 import org.eclipse.smarthome.core.thing.Bridge;
+import org.eclipse.smarthome.core.thing.Channel;
+import org.eclipse.smarthome.core.thing.ChannelUID;
 import org.eclipse.smarthome.core.thing.Thing;
 import org.eclipse.smarthome.core.thing.ThingStatus;
+import org.eclipse.smarthome.core.thing.ThingStatusDetail;
 import org.eclipse.smarthome.core.thing.binding.ThingHandler;
+import org.eclipse.smarthome.core.types.Command;
+import org.eclipse.smarthome.core.types.RefreshType;
 import org.eclipse.smarthome.core.types.State;
 import org.openhab.binding.netatmo.handler.NetatmoBridgeHandler;
 import org.openhab.binding.netatmo.handler.NetatmoDeviceHandler;
@@ -36,8 +41,7 @@ import io.swagger.client.model.NAPlug;
 public class NAPlugHandler extends NetatmoDeviceHandler {
 
     private static Logger logger = LoggerFactory.getLogger(NAPlugHandler.class);
-    private NAPlug naPlug;
-    // private Configuration config = this.get
+    // private NAPlug naPlug;
 
     public NAPlugHandler(Thing thing) {
         super(thing);
@@ -51,18 +55,14 @@ public class NAPlugHandler extends NetatmoDeviceHandler {
             // Here, only 1 device should be retrieved as getthermostatsdata is called using EQUIPEMENT_ID
             // which contains the netatmo device (Plug) id
             bridgeHandler = (NetatmoBridgeHandler) getBridge().getHandler();
-            naPlug = bridgeHandler.getThermostatApi().getthermostatsdata((String) getConfig().get(EQUIPMENT_ID))
-                    .getBody().getDevices().get(0);
         } catch (Exception e) {
             logger.error("Cannot create NAPlugHandler : {}", e.getMessage());
         }
 
         updateStatus(ThingStatus.ONLINE);
-        updateChannels();
     }
 
-    @Override
-    protected State getNAChannelValue(String channelId) {
+    protected State getNAChannelValue(NAPlug naPlug, String channelId) {
 
         switch (channelId) {
 
@@ -82,27 +82,31 @@ public class NAPlugHandler extends NetatmoDeviceHandler {
         }
     }
 
-    /*
-     * @Override
-     * protected void updateChannels() {
-     * try {
-     * // bridgeHandler = (NetatmoBridgeHandler) getBridge().getHandler();
-     *
-     * for (Channel channel : getThing().getChannels()) {
-     * String channelId = channel.getUID().getId();
-     * State state = getNAPlugChannelValue(channelId);
-     * if (state != null) {
-     * logger.debug("Update state for channel {}. New state is {}", channelId, state);
-     * updateState(channel.getUID(), state);
-     * } else {
-     * logger.warn("Could not get value for channel {}", channelId);
-     * }
-     * }
-     * super.updateChannels();
-     * } catch (Exception e) {
-     * updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.NONE, e.getMessage());
-     * }
-     * }
-     */
+    public void updateChannels(NAPlug naPlug) {
+        try {
+            for (Channel channel : getThing().getChannels()) {
+                String channelId = channel.getUID().getId();
+                State state = getNAChannelValue(naPlug, channelId);
+                if (state != null) {
+                    logger.debug("Update state for channel {}. New state is {}", channelId, state);
+                    updateState(channel.getUID(), state);
+                } else {
+                    logger.warn("Could not get value for channel {}", channelId);
+                }
+            }
+            // super.updateChannels();
+        } catch (Exception e) {
+            updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.NONE, e.getMessage());
+        }
+    }
+
+    @Override
+    public void handleCommand(ChannelUID channelUID, Command command) {
+        if (command == RefreshType.REFRESH) {
+            logger.debug("Refreshing {}", channelUID);
+        } else {
+            logger.warn("This Thing is read-only and can only handle REFRESH command");
+        }
+    }
 
 }

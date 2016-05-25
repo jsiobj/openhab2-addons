@@ -15,7 +15,7 @@ package org.openhab.binding.netatmo.config;
  */
 public class NetatmoDeviceConfiguration {
     private String equipmentId;
-    public long refreshInterval;
+    // public long refreshInterval;
 
     public String getEquipmentId() {
         // Bug #3891 : Netatmo API only works with lower case device/module ids

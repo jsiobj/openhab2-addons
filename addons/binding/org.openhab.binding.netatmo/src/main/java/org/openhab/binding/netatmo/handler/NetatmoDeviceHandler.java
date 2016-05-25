@@ -7,7 +7,7 @@
  */
 package org.openhab.binding.netatmo.handler;
 
-import java.util.concurrent.TimeUnit;
+import java.util.List;
 
 import org.eclipse.smarthome.core.thing.Bridge;
 import org.eclipse.smarthome.core.thing.Thing;
@@ -31,6 +31,11 @@ public abstract class NetatmoDeviceHandler extends AbstractNetatmoThingHandler {
     private static Logger logger = LoggerFactory.getLogger(NetatmoDeviceHandler.class);
 
     private NetatmoDeviceConfiguration configuration;
+    public List<String> moduleList; // List of children netatmo modules
+
+    public void setModuleList(List<String> moduleList) {
+        this.moduleList = moduleList;
+    }
 
     public NetatmoDeviceHandler(Thing thing) {
         super(thing);
@@ -41,15 +46,6 @@ public abstract class NetatmoDeviceHandler extends AbstractNetatmoThingHandler {
         logger.debug("Initialiazing bridge for thing : {}", this.getThing().getLabel());
         super.bridgeHandlerInitialized(thingHandler, bridge);
         this.configuration = this.getConfigAs(NetatmoDeviceConfiguration.class);
-
-        logger.debug("Scheduling data refresh");
-        scheduler.scheduleAtFixedRate(new Runnable() {
-
-            @Override
-            public void run() {
-                updateChannels();
-            }
-        }, 1, configuration.refreshInterval, TimeUnit.MILLISECONDS);
     }
 
     protected String getId() {

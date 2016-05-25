@@ -7,9 +7,11 @@
  */
 package org.openhab.binding.netatmo.handler.station;
 
+import org.eclipse.smarthome.core.thing.ChannelUID;
 import org.eclipse.smarthome.core.thing.Thing;
 import org.eclipse.smarthome.core.thing.ThingStatus;
 import org.eclipse.smarthome.core.thing.ThingStatusDetail;
+import org.eclipse.smarthome.core.types.Command;
 import org.openhab.binding.netatmo.handler.NetatmoDeviceHandler;
 
 //import io.swagger.client.model.NADeviceListBody;
@@ -27,7 +29,6 @@ public class NAMainHandler extends NetatmoDeviceHandler {
         super(thing);
     }
 
-    @Override
     protected void updateChannels() {
         try {
             // Aargh, this silently fails and screws the runnable if the api is not responding as expected (e.g. to many
@@ -40,6 +41,12 @@ public class NAMainHandler extends NetatmoDeviceHandler {
         } catch (Exception e) {
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.NONE, e.getMessage());
         }
+    }
+
+    @Override
+    public void handleCommand(ChannelUID channelUID, Command command) {
+        // TODO Auto-generated method stub
+
     }
 
 }

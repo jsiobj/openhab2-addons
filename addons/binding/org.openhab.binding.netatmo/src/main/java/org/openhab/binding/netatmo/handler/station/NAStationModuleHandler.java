@@ -7,9 +7,11 @@
  */
 package org.openhab.binding.netatmo.handler.station;
 
+import org.eclipse.smarthome.core.thing.ChannelUID;
 import org.eclipse.smarthome.core.thing.Thing;
 import org.eclipse.smarthome.core.thing.ThingStatus;
 import org.eclipse.smarthome.core.thing.ThingStatusDetail;
+import org.eclipse.smarthome.core.types.Command;
 import org.openhab.binding.netatmo.handler.NetatmoModuleHandler;
 
 import io.swagger.client.model.NADeviceListBody;
@@ -28,7 +30,6 @@ public class NAStationModuleHandler extends NetatmoModuleHandler {
         super(thing);
     }
 
-    @Override
     protected void updateChannels() {
         try {
             NADeviceListBody deviceList = bridgeHandler.getStationApi().devicelist(actualApp, getParentId(), false)
@@ -67,4 +68,10 @@ public class NAStationModuleHandler extends NetatmoModuleHandler {
      * }
      * }
      */
+
+    @Override
+    public void handleCommand(ChannelUID channelUID, Command command) {
+        // TODO Auto-generated method stub
+
+    }
 }

@@ -9,16 +9,22 @@ package org.openhab.binding.netatmo.handler;
 
 import static org.openhab.binding.netatmo.NetatmoBindingConstants.*;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.oltu.oauth2.client.request.OAuthClientRequest;
 import org.eclipse.smarthome.core.library.types.DecimalType;
 import org.eclipse.smarthome.core.thing.Bridge;
 import org.eclipse.smarthome.core.thing.Channel;
 import org.eclipse.smarthome.core.thing.ChannelUID;
 import org.eclipse.smarthome.core.thing.ThingStatus;
+import org.eclipse.smarthome.core.thing.ThingStatusDetail;
+import org.eclipse.smarthome.core.thing.ThingUID;
 import org.eclipse.smarthome.core.thing.binding.BaseBridgeHandler;
 import org.eclipse.smarthome.core.types.Command;
 import org.eclipse.smarthome.core.types.State;
 import org.openhab.binding.netatmo.config.NetatmoBridgeConfiguration;
+import org.openhab.binding.netatmo.handler.thermostat.NAPlugHandler;
+import org.openhab.binding.netatmo.handler.thermostat.NATherm1Handler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,6 +33,9 @@ import io.swagger.client.api.StationApi;
 import io.swagger.client.api.ThermostatApi;
 import io.swagger.client.auth.OAuth;
 import io.swagger.client.auth.OAuthFlow;
+import io.swagger.client.model.NAPlug;
+import io.swagger.client.model.NAThermostat;
+import io.swagger.client.model.NAThermostatDataResponse;
 import io.swagger.client.model.NAUserAdministrative;
 import retrofit.RestAdapter.LogLevel;
 
@@ -49,6 +58,8 @@ public class NetatmoBridgeHandler extends BaseBridgeHandler {
     public ApiClient apiClient;
     public StationApi stationApi;
     public ThermostatApi thermostatApi;
+
+    private String[] plugIdList;
 
     public NetatmoBridgeHandler(Bridge bridge) {
         super(bridge);
@@ -94,8 +105,14 @@ public class NetatmoBridgeHandler extends BaseBridgeHandler {
         }
 
         updateStatus(ThingStatus.ONLINE);
-        updateChannels();
 
+        logger.debug("Scheduling data refresh");
+        scheduler.scheduleAtFixedRate(new Runnable() {
+            @Override
+            public void run() {
+                updateChannels();
+            }
+        }, 1, configuration.refreshInterval, TimeUnit.SECONDS);
     }
 
     private void updateChannels() {
@@ -110,22 +127,51 @@ public class NetatmoBridgeHandler extends BaseBridgeHandler {
             } else {
                 logger.warn("Could not get value for channel {}", channelId);
             }
-
         }
+
+        // Getting all relevant data in one call for each type of device
+        // TODO : add weather station once swagger client updated
+        // TODO : add welcome smart cam
+        if (configuration.readThermostat) {
+
+            NAThermostatDataResponse naThermDataResponse = null;
+
+            try {
+                // Getting all devices and data in one API call...
+                naThermDataResponse = getThermostatApi().getthermostatsdata(null);
+            } catch (Exception e) {
+                logger.error("Cannot get thermostat data : {}", e.getMessage());
+                updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR);
+                return;
+            }
+
+            // Go through all device / plugs and updating corresponding thing
+            for (NAPlug naPlug : naThermDataResponse.getBody().getDevices()) {
+
+                try {
+                    String naPlugThingIdString = naPlug.getId().replaceAll("[^a-zA-Z0-9_]", "");
+                    NAPlugHandler naPlugHandler = (NAPlugHandler) getThingByUID(
+                            new ThingUID(PLUG_THING_TYPE, getThing().getUID(), naPlugThingIdString)).getHandler();
+                    naPlugHandler.updateChannels(naPlug);
+
+                    // There is only one thermostat for a plug, no need for a loop
+                    NAThermostat naTherm1 = naPlug.getModules().get(0);
+                    String naThermThingIdString = naTherm1.getId().replaceAll("[^a-zA-Z0-9_]", "");
+                    NATherm1Handler naThermHandler = (NATherm1Handler) getThingByUID(
+                            new ThingUID(THERM1_THING_TYPE, getThing().getUID(), naThermThingIdString)).getHandler();
+                    naThermHandler.updateChannels(naTherm1);
+                } catch (Exception e) {
+                    logger.error("Cannot get thing : {}", e.getMessage());
+                    updateStatus(ThingStatus.OFFLINE);
+                    return;
+                }
+            }
+        }
+
+        updateStatus(ThingStatus.ONLINE);
     }
 
     private State getNAChannelValue(String channelId) {
-        /*
-         * TODO : translate numeric values to significative text
-         *
-         * unit : 0 -> metric system, 1 -> imperial system
-         * windunit: 0 -> kph, 1 -> mph, 2 -> ms, 3 -> beaufort, 4 -> knot
-         * pressureunit: 0 -> mbar, 1 -> inHg, 2 -> mmHg
-         * lang: user locale reg_locale: user regional preferences (used for displaying date)
-         * feel_like: algorithme used to compute feel like temperature, 0 -> humidex, 1 ->
-         * heat-indexCzQCOSte9IEKCGxKTb21
-         */
-
         switch (channelId) {
             case CHANNEL_UNIT:
                 return new DecimalType(admin.getUnit());
@@ -178,5 +224,13 @@ public class NetatmoBridgeHandler extends BaseBridgeHandler {
             return thermostatApi;
         }
         throw new Exception("Configuration does not allow access to ThermostatApi");
+    }
+
+    public String[] getPlugIdList() {
+        return plugIdList;
+    }
+
+    public void setPlugIdList(String[] plugIdList) {
+        this.plugIdList = plugIdList;
     }
 }
