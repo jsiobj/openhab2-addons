@@ -23,6 +23,9 @@ import org.openhab.binding.netatmo.handler.NetatmoBridgeHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.swagger.client.model.NADevice;
+import io.swagger.client.model.NADeviceListResponse;
+import io.swagger.client.model.NAModule;
 import io.swagger.client.model.NAPlug;
 import io.swagger.client.model.NAThermostat;
 import io.swagger.client.model.NAThermostatDataResponse;
@@ -70,6 +73,44 @@ public class NetatmoModuleDiscoveryService extends AbstractDiscoveryService {
         }
     }
 
+    private void screenStationDevicesAndModules(NADeviceListResponse deviceList) {
+        if (deviceList != null) {
+            List<NADevice> devices = deviceList.getBody().getDevices();
+            if (devices != null) {
+                for (NADevice naDevice : devices) {
+                    onStationAddedInternal(naDevice);
+                    List<NAModule> modules = deviceList.getBody().getModules();
+                    if (modules != null) {
+                        for (NAModule naModule : modules) {
+                            onStationModuleAddedInternal(naModule);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private void onStationAddedInternal(NADevice naDevice) {
+        ThingUID thingUID = findThingUID(naDevice.getType(), naDevice.getId());
+        Map<String, Object> properties = new HashMap<>(1);
+
+        properties.put(EQUIPMENT_ID, naDevice.getId());
+
+        String name = naDevice.getModuleName();
+
+        addDiscoveredThing(thingUID, properties, (name == null) ? naDevice.getStationName() : name);
+    }
+
+    private void onStationModuleAddedInternal(NAModule naModule) {
+        ThingUID thingUID = findThingUID(naModule.getType(), naModule.getId());
+        Map<String, Object> properties = new HashMap<>(2);
+
+        properties.put(EQUIPMENT_ID, naModule.getId());
+        properties.put(PARENT_ID, naModule.getMainDevice());
+
+        addDiscoveredThing(thingUID, properties, naModule.getModuleName());
+    }
+
     private void onPlugAddedInternal(NAPlug naPlug) {
         ThingUID thingUID = findThingUID(naPlug.getType(), naPlug.getId());
         Map<String, Object> properties = new HashMap<>(1);
@@ -91,8 +132,12 @@ public class NetatmoModuleDiscoveryService extends AbstractDiscoveryService {
 
         try {
             // TODO : update discovery for WeatherStation once swagger api is updated
-            // deviceList = netatmoBridgeHandler.getStationApi().devicelist("app_station", null, false);
-            // screenDevicesAndModules(deviceList);
+            if (netatmoBridgeHandler.stationApi != null) {
+                NADeviceListResponse deviceList = netatmoBridgeHandler.getStationApi().devicelist("app_station", null,
+                        false);
+                screenStationDevicesAndModules(deviceList);
+            }
+
             if (netatmoBridgeHandler.thermostatApi != null) {
                 thermostatData = netatmoBridgeHandler.getThermostatApi().getthermostatsdata(null);
                 screenThermostatDevicesAndModules(thermostatData);
