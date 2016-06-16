@@ -43,7 +43,6 @@ import io.swagger.client.model.NAThermostat;
 public class NATherm1Handler extends NetatmoModuleHandler {
 
     private static Logger logger = LoggerFactory.getLogger(NATherm1Handler.class);
-    // private NAThermostat naTherm1;
     private Integer setpointDefaultDuration = null;
 
     public NATherm1Handler(Thing thing) {
@@ -53,17 +52,6 @@ public class NATherm1Handler extends NetatmoModuleHandler {
     @Override
     public void bridgeHandlerInitialized(ThingHandler thingHandler, Bridge bridge) {
         super.bridgeHandlerInitialized(thingHandler, bridge);
-        try {
-            // Here, only 1 thermostat (module) should be retrieved as getthermostatsdata() is called using PARENT_ID
-            // which contains the Netatmo Plug/Relay (device) id and there can be only 1 thermostat (module) per
-            // Plug/Relay
-            // String naPlugId = (String) getConfig().get(PARENT_ID);
-            // NAPlug naPlug =
-            // bridgeHandler.getThermostatApi().getthermostatsdata(naPlugId).getBody().getDevices().get(0);
-            // naTherm1 = naPlug.getModules().get(0);
-        } catch (Exception e) {
-            logger.error("Cannot create naTherm1 handler : {}", e.getMessage());
-        }
         updateStatus(ThingStatus.ONLINE);
     }
 

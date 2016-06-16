@@ -61,39 +61,6 @@ abstract class AbstractNetatmoThingHandler extends BaseThingHandler {
         bridgeHandler = (NetatmoBridgeHandler) thingHandler;
     }
 
-    /*
-     * protected void updateChannels() {
-     * for (Channel channel : getThing().getChannels()) {
-     * String channelId = channel.getUID().getId();
-     * State state = getNAChannelValue(channelId);
-     * if (state != null) {
-     * logger.debug("Update state for channel {}. New state is {}", channelId, state);
-     * updateState(channel.getUID(), state);
-     * } else {
-     * logger.warn("Could not get value for channel {}", channelId);
-     * }
-     * }
-     * }
-     */
-
-    /*
-     * protected State getNAChannelValue(String channelId) {
-     * return null;
-     * }
-     */
-
-    /*
-     * @Override
-     * public void handleCommand(ChannelUID channelUID, Command command) {
-     * if (command == RefreshType.REFRESH) {
-     * logger.debug("Refreshing {}", channelUID);
-     * updateChannels();
-     * } else {
-     * logger.warn("This Thing is read-only and can only handle REFRESH command");
-     * }
-     * }
-     */
-
     // Misc tools
     protected Calendar timestampToCalendar(Integer netatmoTS) {
         Calendar calendar = Calendar.getInstance();

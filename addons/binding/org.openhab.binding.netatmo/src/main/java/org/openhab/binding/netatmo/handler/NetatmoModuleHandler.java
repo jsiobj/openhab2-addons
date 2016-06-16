@@ -28,7 +28,7 @@ import org.openhab.binding.netatmo.config.NetatmoModuleConfiguration;
 public abstract class NetatmoModuleHandler extends AbstractNetatmoThingHandler {
 
     // private static Logger logger = LoggerFactory.getLogger(NetatmoModuleHandler.class);
-    private final NetatmoModuleConfiguration configuration;
+    private NetatmoModuleConfiguration configuration;
 
     protected final int batteryMin;
     protected final int batteryLow;
@@ -46,6 +46,11 @@ public abstract class NetatmoModuleHandler extends AbstractNetatmoThingHandler {
     @Override
     public void bridgeHandlerInitialized(ThingHandler thingHandler, Bridge bridge) {
         super.bridgeHandlerInitialized(thingHandler, bridge);
+    }
+
+    @Override
+    public void initialize() {
+        this.configuration = this.getConfigAs(NetatmoModuleConfiguration.class);
     }
 
     protected State getNAChannelValue(String channelId) {

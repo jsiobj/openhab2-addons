@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
 public abstract class NetatmoDeviceHandler extends AbstractNetatmoThingHandler {
     private static Logger logger = LoggerFactory.getLogger(NetatmoDeviceHandler.class);
 
-    private NetatmoDeviceConfiguration configuration;
+    protected NetatmoDeviceConfiguration configuration;
     public List<String> moduleList; // List of children netatmo modules
 
     public void setModuleList(List<String> moduleList) {
@@ -45,6 +45,10 @@ public abstract class NetatmoDeviceHandler extends AbstractNetatmoThingHandler {
     public void bridgeHandlerInitialized(ThingHandler thingHandler, Bridge bridge) {
         logger.debug("Initialiazing bridge for thing : {}", this.getThing().getLabel());
         super.bridgeHandlerInitialized(thingHandler, bridge);
+    }
+
+    @Override
+    public void initialize() {
         this.configuration = this.getConfigAs(NetatmoDeviceConfiguration.class);
     }
 

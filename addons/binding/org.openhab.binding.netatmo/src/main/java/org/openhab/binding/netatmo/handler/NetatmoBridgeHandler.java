@@ -17,14 +17,10 @@ import org.eclipse.smarthome.core.thing.Bridge;
 import org.eclipse.smarthome.core.thing.Channel;
 import org.eclipse.smarthome.core.thing.ChannelUID;
 import org.eclipse.smarthome.core.thing.ThingStatus;
-import org.eclipse.smarthome.core.thing.ThingStatusDetail;
-import org.eclipse.smarthome.core.thing.ThingUID;
 import org.eclipse.smarthome.core.thing.binding.BaseBridgeHandler;
 import org.eclipse.smarthome.core.types.Command;
 import org.eclipse.smarthome.core.types.State;
 import org.openhab.binding.netatmo.config.NetatmoBridgeConfiguration;
-import org.openhab.binding.netatmo.handler.thermostat.NAPlugHandler;
-import org.openhab.binding.netatmo.handler.thermostat.NATherm1Handler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,9 +29,6 @@ import io.swagger.client.api.StationApi;
 import io.swagger.client.api.ThermostatApi;
 import io.swagger.client.auth.OAuth;
 import io.swagger.client.auth.OAuthFlow;
-import io.swagger.client.model.NAPlug;
-import io.swagger.client.model.NAThermostat;
-import io.swagger.client.model.NAThermostatDataResponse;
 import io.swagger.client.model.NAUserAdministrative;
 import retrofit.RestAdapter.LogLevel;
 
@@ -94,7 +87,7 @@ public class NetatmoBridgeHandler extends BaseBridgeHandler {
 
             // Get user administrative data from either station or thermostat API
             if (configuration.readStation) {
-                admin = stationApi.getuser().getBody().getAdministrative();
+                admin = stationApi.getstationsdata(null).getBody().getUser().getAdministrative();
             } else if (configuration.readThermostat) {
                 admin = thermostatApi.getthermostatsdata(null).getBody().getUser().getAdministrative();
             } else {
@@ -128,46 +121,6 @@ public class NetatmoBridgeHandler extends BaseBridgeHandler {
                 logger.warn("Could not get value for channel {}", channelId);
             }
         }
-
-        // Getting all relevant data in one call for each type of device
-        // TODO : add weather station once swagger client updated
-        // TODO : add welcome smart cam
-        if (configuration.readThermostat) {
-
-            NAThermostatDataResponse naThermDataResponse = null;
-
-            try {
-                // Getting all devices and data in one API call...
-                naThermDataResponse = getThermostatApi().getthermostatsdata(null);
-            } catch (Exception e) {
-                logger.error("Cannot get thermostat data : {}", e.getMessage());
-                updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.COMMUNICATION_ERROR);
-                return;
-            }
-
-            // Go through all device / plugs and updating corresponding thing
-            for (NAPlug naPlug : naThermDataResponse.getBody().getDevices()) {
-
-                try {
-                    String naPlugThingIdString = naPlug.getId().replaceAll("[^a-zA-Z0-9_]", "");
-                    NAPlugHandler naPlugHandler = (NAPlugHandler) getThingByUID(
-                            new ThingUID(PLUG_THING_TYPE, getThing().getUID(), naPlugThingIdString)).getHandler();
-                    naPlugHandler.updateChannels(naPlug);
-
-                    // There is only one thermostat for a plug, no need for a loop
-                    NAThermostat naTherm1 = naPlug.getModules().get(0);
-                    String naThermThingIdString = naTherm1.getId().replaceAll("[^a-zA-Z0-9_]", "");
-                    NATherm1Handler naThermHandler = (NATherm1Handler) getThingByUID(
-                            new ThingUID(THERM1_THING_TYPE, getThing().getUID(), naThermThingIdString)).getHandler();
-                    naThermHandler.updateChannels(naTherm1);
-                } catch (Exception e) {
-                    logger.error("Cannot get thing : {}", e.getMessage());
-                    updateStatus(ThingStatus.OFFLINE);
-                    return;
-                }
-            }
-        }
-
         updateStatus(ThingStatus.ONLINE);
     }
 

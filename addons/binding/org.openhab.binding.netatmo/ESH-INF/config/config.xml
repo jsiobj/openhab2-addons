@@ -37,8 +37,8 @@
 
         <parameter name="refreshInterval" type="integer" required="true">
             <label>Refresh Interval</label>
-            <description>The refresh interval to poll Netatmo API (in seconds).</description>
-            <default>60</default>
+            <description>The refresh interval to poll Netatmo API (in seconds) for global parameters.</description>
+            <default>3600</default>
             <advanced>true</advanced>
         </parameter>
                        
@@ -60,6 +60,12 @@
             <label>Equipment ID</label>
             <description>Id of the Device (mac address)</description>
             <required>true</required>
+        </parameter>
+        <parameter name="refreshInterval" type="integer" required="true">
+            <label>Refresh Interval</label>
+            <description>The refresh interval to poll Netatmo API (in seconds) for thermostat parameters.</description>
+            <default>60</default>
+            <advanced>true</advanced>
         </parameter>
     </config-description>                 
     
